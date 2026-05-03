@@ -1,0 +1,69 @@
+# Profil « docker » : Postgres local, Kafka PLAINTEXT (sans SASL).
+# Swagger UI : chemins relatifs à la racine (sans préfixe gateway).
+
+server:
+  port: 8090
+
+app:
+  swagger:
+    server-url: ${PAYMENT_SERVER_URL:http://localhost:8090}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    config-url: /v3/api-docs/swagger-config
+    url: /v3/api-docs
+  api-docs:
+    path: /v3/api-docs
+
+spring:
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME:payment_db}
+    user: ${DB_LIQUIBASE_USERNAME}
+    password: ${DB_LIQUIBASE_PASSWORD}
+    enabled: true
+    default-schema: ${DB_SCHEMA:public}
+    liquibase-schema: ${DB_SCHEMA:public}
+
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME:payment_db}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    pool:
+      enabled: true
+      initial-size: 1
+      max-size: 5
+      max-idle-time: 30m
+      max-life-time: 10m
+      acquire-retry: 3
+      max-acquire-time: 30s
+      validation-query: SELECT 1
+  sql:
+    init:
+      mode: never
+
+  kafka:
+    bootstrap-servers: ${KAFKA_HOST}:${KAFKA_PORT:9092}
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+application:
+  external:
+    stock-service-url: http://${EXTERNAL_HOST:host.docker.internal}:8081
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+  kafka:
+    topics:
+      wallet-create: wallet-create-topic
+      payment-commission: transaction-commission-topic
+  payment:
+    commission-rate: ${COMMISSION_RATE:0.1}

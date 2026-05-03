@@ -1,0 +1,26 @@
+# N’applique que l’image user-payment-service.
+# Prérequis : `yowyob-net` (voir payment-service-main/docker-compose.yml).
+#
+#   cd .. && docker compose up -d postgres zookeeper kafka
+#   cd user-payment-service-main && docker compose up --build
+
+name: yowyob-user-payment-only
+
+services:
+  user-payment-service:
+    build: .
+    image: yowyob/user-payment-service:local
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_HOST: ${DB_HOST:-postgres}
+      KAFKA_HOST: ${KAFKA_HOST:-kafka}
+    ports:
+      - "${USER_PAYMENT_PORT:-8091}:8091"
+    networks:
+      - yowyob-net
+
+networks:
+  yowyob-net:
+    external: true
+    name: yowyob-net

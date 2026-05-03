@@ -1,0 +1,116 @@
+server:
+  port: 8090
+
+# Config Swagger
+app:
+  swagger:
+    server-url: ${PAYMENT_SERVER_URL:https://traefikdev.yowyob.com/payment}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    config-url: /payment/v3/api-docs/swagger-config
+    url: /payment/v3/api-docs
+  api-docs:
+    path: /v3/api-docs
+
+spring:
+  application:
+    name: payment-service
+
+  docker:
+    compose:
+      enabled: false
+
+  # ------------------------------------------------------------------
+  # DATABASE — Liquibase
+  # ------------------------------------------------------------------
+  liquibase:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME:payment}
+    user: ${DB_LIQUIBASE_USERNAME}
+    password: ${DB_LIQUIBASE_PASSWORD}
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    default-schema: ${DB_SCHEMA:public}
+    liquibase-schema: ${DB_SCHEMA:public}
+
+  # POSTGRESQL (R2DBC)
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:payment}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:password}
+    pool:
+      enabled: true
+      initial-size: 1
+      max-size: 5
+      max-idle-time: 30m
+      max-life-time: 10m
+      acquire-retry: 3
+      max-acquire-time: 30s
+      validation-query: SELECT 1
+  sql:
+    init:
+      mode: never
+
+  # ------------------------------------------------------------------
+  # KAFKA — Connexion sécurisée SASL/SCRAM-SHA-256
+  # ------------------------------------------------------------------
+  kafka:
+    bootstrap-servers: ${KAFKA_HOST}:${KAFKA_PORT:29092}
+
+    # ── Authentification SASL/SCRAM-SHA-256 ────────────────────────
+    properties:
+      security.protocol: SASL_PLAINTEXT
+      sasl.mechanism: SCRAM-SHA-256
+      sasl.jaas.config: >
+        org.apache.kafka.common.security.scram.ScramLoginModule required
+        username="${KAFKA_BACKEND_USER}" password="${KAFKA_BACKEND_PASSWORD}";
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+# CUSTOM CONFIG 
+application:
+  external:
+    stock-service-url: http://${EXTERNAL_HOST:localhost}:8081
+  security:
+    jwt:
+      secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+
+  kafka:
+    topics:
+      wallet-create: wallet-create-topic
+      payment-commission: transaction-commission-topic
+
+  payment:
+    commission-rate: 0.05
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: [ "health", "info", "prometheus" ]
+  endpoint:
+    health:
+      show-details: "always"
+      probes:
+        enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# RESILIENCE4J 
+resilience4j:
+  circuitbreaker:
+    instances:
+      stock-service:
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5s
+        slidingWindowSize: 5

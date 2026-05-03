@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+
+
+    <changeSet id="v1.0-create-wallets" author="payment-service">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="wallets"/></not>
+        </preConditions>
+        <createTable tableName="wallets">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="owner_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="owner_name" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="balance" type="DECIMAL(19,4)" defaultValueNumeric="0.00">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <!-- Index pour les lookups par owner_id (findByOwnerId) -->
+    <changeSet id="v1.0-idx-wallets-owner-id" author="payment-service">
+        <preConditions onFail="MARK_RAN">
+            <not><indexExists tableName="wallets" indexName="idx_wallets_owner_id"/></not>
+        </preConditions>
+        <createIndex tableName="wallets" indexName="idx_wallets_owner_id">
+            <column name="owner_id"/>
+        </createIndex>
+    </changeSet>
+
+
+    <!-- ================================================================ -->
+    <!-- 2. TABLE : transactions                                           -->
+    <!--    Entité : TransactionEntity.java                               -->
+    <!--    Champs : id, wallet_id, amount, type, status, created_at      -->
+    <!--    type   : PAYMENT | RECHARGE (enum TransactionType)            -->
+    <!--    status : PENDING | COMPLETED | FAILED (enum TransactionStatus) -->
+    <!-- ================================================================ -->
+
+    <changeSet id="v1.0-create-transactions" author="payment-service">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="transactions"/></not>
+        </preConditions>
+        <createTable tableName="transactions">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="wallet_id" type="UUID">
+                <constraints nullable="false"
+                             foreignKeyName="fk_transaction_wallet"
+                             referencedTableName="wallets"
+                             referencedColumnNames="id"/>
+            </column>
+            <column name="amount" type="DECIMAL(19,4)">
+                <constraints nullable="false"/>
+            </column>
+            <!-- PAYMENT, RECHARGE -->
+            <column name="type" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <!-- PENDING, COMPLETED, FAILED -->
+            <column name="status" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <!-- Index pour les lookups par wallet_id (findAllByWalletId) -->
+    <changeSet id="v1.0-idx-transactions-wallet-id" author="payment-service">
+        <preConditions onFail="MARK_RAN">
+            <not><indexExists tableName="transactions" indexName="idx_transactions_wallet_id"/></not>
+        </preConditions>
+        <createIndex tableName="transactions" indexName="idx_transactions_wallet_id">
+            <column name="wallet_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

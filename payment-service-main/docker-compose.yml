@@ -1,0 +1,30 @@
+# N’applique que l’image du payment-service.
+# Prérequis : l’infra tourne sur le réseau `yowyob-net` (démarrez d’abord le compose à la racine).
+#
+#   cd .. && docker compose up -d postgres zookeeper kafka
+#   cd payment-service-main && docker compose up --build
+#
+# Variables : utiliser le même `.env` que le projet (ou export) pour pointer vers l’hôte hôte
+#             si les services tournent sur la machine hôte (DB_HOST=host.docker.internal sur Mac/Win).
+
+name: yowyob-payment-only
+
+services:
+  payment-service:
+    build: .
+    image: yowyob/payment-service:local
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      # Surcharge typique en conteneur (les conteneurs du compose racin utilisent les noms de service)
+      DB_HOST: ${DB_HOST:-postgres}
+      KAFKA_HOST: ${KAFKA_HOST:-kafka}
+    ports:
+      - "${PAYMENT_PORT:-8090}:8090"
+    networks:
+      - yowyob-net
+
+networks:
+  yowyob-net:
+    external: true
+    name: yowyob-net
