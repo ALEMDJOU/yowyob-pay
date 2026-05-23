@@ -15,7 +15,7 @@ public interface AgentUseCase {
      * Enregistre un nouvel agent si l’email est libre.
      *
      * @param agent données brutes (mot de passe en clair, haché dans le service)
-     * @return agent persisté avec mot de passe chiffré
+     * @return agent persisté ( avec le mot de passe mais chiffré ) mais avec le mot de passe null
      * @throws RuntimeException réactive si l’email existe déjà
      */
     Mono<Agent> register(Agent agent);

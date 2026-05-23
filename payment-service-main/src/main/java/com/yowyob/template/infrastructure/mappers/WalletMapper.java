@@ -1,6 +1,5 @@
 package com.yowyob.template.infrastructure.mappers;
 
-
 import com.yowyob.template.domain.model.Wallet;
 import com.yowyob.template.infrastructure.adapters.inbound.rest.dto.WalletRequest;
 import com.yowyob.template.infrastructure.adapters.inbound.rest.dto.WalletResponse;
@@ -8,7 +7,8 @@ import com.yowyob.template.infrastructure.adapters.outbound.persistence.entity.W
 import org.mapstruct.Mapper;
 
 /**
- * Conversions MapStruct entre DTO REST, entité R2DBC et modèle de domaine {@link Wallet}.
+ * Conversions MapStruct entre DTO REST, entité R2DBC et modèle de domaine
+ * {@link Wallet}.
  */
 @Mapper(componentModel = "spring")
 public interface WalletMapper {
@@ -24,6 +24,12 @@ public interface WalletMapper {
      * @return payload de réponse API
      */
     WalletResponse toResponse(Wallet domain);
+
+    /**
+     * @param response corps issu du stockage idempotence
+     * @return modèle de domaine
+     */
+    Wallet toDomain(WalletResponse response);
 
     /**
      * @param domain modèle de domaine

@@ -1,53 +1,61 @@
 package com.yowyob.template.domain.handler;
 
-import com.yowyob.template.domain.model.TransactionType;
-import com.yowyob.template.domain.model.Wallet;
-import com.yowyob.template.domain.ports.out.TransactionRepositoryPort;
-import com.yowyob.template.domain.ports.out.WalletRepositoryPort;
-import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
-
 import java.math.BigDecimal;
 
+import org.springframework.stereotype.Component;
+
+import com.yowyob.template.domain.model.TransactionType;
+import com.yowyob.template.domain.model.Wallet;
+import com.yowyob.template.domain.ports.out.FinancialLedgerPort;
+import com.yowyob.template.domain.ports.out.TransactionRepositoryPort;
+import com.yowyob.template.domain.ports.out.WalletRepositoryPort;
+
+import reactor.core.publisher.Mono;
+
 /**
- * Crédit du portefeuille : ajoute le montant au solde existant.
+ * Crédit du portefeuille : ajoute le montant au solde existant (logique pure,
+ * sans état mutable).
  */
 @Component
 public class RechargeHandler extends AbstractTransactionHandler {
 
     /**
-     * @param walletRepository     persistance des portefeuilles
-     * @param transactionRepository persistance des transactions
+     * Nom : constructeur
+     * <p>
+     * Description : injecte les ports de persistance pour la chaîne
+     * {@link #process}.
+     * </p>
+     *
+     * @param walletRepository      accès aux portefeuilles
+     * @param transactionRepository accès aux transactions
+     * @param financialLedgerPort   persistance atomique wallet + ligne transaction
      */
-    public RechargeHandler(WalletRepositoryPort walletRepository, TransactionRepositoryPort transactionRepository) {
-        super(walletRepository, transactionRepository);
+    public RechargeHandler(
+            WalletRepositoryPort walletRepository,
+            TransactionRepositoryPort transactionRepository,
+            FinancialLedgerPort financialLedgerPort) {
+        super(walletRepository, transactionRepository, financialLedgerPort);
     }
 
     /**
-     * Valide que le montant de recharge est strictement positif.
+     * Nom : {@code computeUpdatedWallet}
+     * <p>
+     * Description : refuse les montants non strictement positifs ; sinon retourne
+     * le
+     * portefeuille avec solde augmenté du montant de recharge.
+     * </p>
      *
-     * @param wallet  portefeuille cible
-     * @param amount  montant à créditer
-     * @return le portefeuille inchangé si la validation réussit
-     * @throws IllegalArgumentException via {@link Mono#error(Throwable)} si montant ≤ 0
+     * @param wallet portefeuille cible
+     * @param amount montant à créditer
+     * @return portefeuille avec nouveau solde (non encore persisté)
+     * @throws IllegalArgumentException via {@link Mono#error(Throwable)} si montant
+     *                                  ≤ 0
      */
     @Override
-    protected Mono<Wallet> validate(Wallet wallet, BigDecimal amount) {
+    protected Mono<Wallet> computeUpdatedWallet(Wallet wallet, BigDecimal amount) {
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             return Mono.error(new IllegalArgumentException("Le montant de la recharge doit être positif"));
         }
-        return Mono.just(wallet);
-    }
-
-    /**
-     * Ajoute le montant au solde courant.
-     *
-     * @param wallet  portefeuille à créditer
-     * @param amount  montant positif
-     * @return portefeuille avec solde augmenté
-     */
-    @Override
-    protected Mono<Wallet> applyBalance(Wallet wallet, BigDecimal amount) {
         BigDecimal newBalance = wallet.balance().add(amount);
         return Mono.just(wallet.withBalance(newBalance));
     }

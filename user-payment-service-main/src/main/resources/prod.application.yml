@@ -3,17 +3,18 @@ server:
   forward-headers-strategy: framework
 
 springdoc:
+  api-docs:
+    enabled: false
+    path: /v3/api-docs
   swagger-ui:
+    enabled: false
     path: /swagger-ui.html
     config-url: /user-payment/v3/api-docs/swagger-config
     url: /user-payment/v3/api-docs
-  api-docs:
-    path: /v3/api-docs
 
 spring:
   application:
     name: user-payment-service
-
   docker:
     compose:
       enabled: false
@@ -27,7 +28,6 @@ spring:
     default-schema: ${DB_SCHEMA:public}
     liquibase-schema: ${DB_SCHEMA:public}
 
-  # POSTGRESQL (R2DBC)
   r2dbc:
     url: r2dbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME:payment}
     username: ${DB_USERNAME}
@@ -45,7 +45,6 @@ spring:
     init:
       mode: never
 
-  # KAFKA 
   kafka:
     bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:9092}
     consumer:
@@ -58,36 +57,36 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
-# CUSTOM CONFIG 
 application:
   external:
     stock-service-url: http://${EXTERNAL_HOST:localhost}:8081
   security:
+    expose-openapi: false
+    cors-allowed-origins-csv: ${CORS_ALLOWED_ORIGINS:}
     jwt:
-      # Générez une vraie clé en prod (ex: openssl rand -base64 64)
-      secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-      expiration: 3600000 # 1 heure en ms
-
+      secret: ${JWT_SECRET}
+      expiration: ${JWT_EXPIRATION_MS}
   kafka:
     topics:
       transaction-recharge: transaction-recharge-topic
+  business:
+    max-recharge-amount: ${MAX_RECHARGE_AMOUNT}
 
 management:
   endpoints:
     web:
       exposure:
-        include: [ "health", "info", "prometheus" ]
+        include: health
   endpoint:
     health:
-      show-details: "always"
+      show-details: never
       probes:
         enabled: true
   metrics:
     export:
       prometheus:
-        enabled: true
+        enabled: false
 
-# RESILIENCE4J 
 resilience4j:
   circuitbreaker:
     instances:

@@ -1,17 +1,23 @@
 package com.yowyob.template.infrastructure.adapters.inbound.rest;
 
+import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.yowyob.template.application.service.IdempotencyService;
+import com.yowyob.template.domain.exception.MissingIdempotencyKeyException;
 import com.yowyob.template.domain.model.TransactionType;
+import com.yowyob.template.domain.model.idempotency.IdempotencyContext;
 import com.yowyob.template.domain.ports.in.TransactionUseCase;
 import com.yowyob.template.infrastructure.adapters.inbound.rest.dto.TransactionRequest;
 import com.yowyob.template.infrastructure.adapters.inbound.rest.dto.TransactionResponse;
@@ -35,67 +41,92 @@ import reactor.core.publisher.Mono;
 @Tag(name = "Transaction Management", description = "API for transaction management")
 @RestController
 @RequestMapping("/api/v1/transactions")
+@Validated
 @RequiredArgsConstructor
 public class TransactionController {
 
     private final TransactionUseCase useCase;
     private final TransactionMapper mapper;
+    private final IdempotencyService idempotencyService;
+
+    private Mono<Void> requireIdempotencyKey(String idempotencyKey) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Mono.error(new MissingIdempotencyKeyException(
+                    "L’en-tête Idempotency-Key est obligatoire pour cette opération"));
+        }
+        return Mono.empty();
+    }
 
     /**
      * Crée une transaction de type {@link TransactionType#RECHARGE} uniquement.
      *
-     * @param requestMono corps validé
-     * @return transaction créée (201)
-     * @throws IllegalArgumentException réactive si le type n’est pas RECHARGE
+     * @param idempotencyKey en-tête obligatoire d’idempotence
+     * @param requestMono    corps validé
+     * @return transaction créée (201 ou rejouée 201)
      */
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Create a new recharge transaction", description = "Creates a new transaction of type RECHARGE. This endpoint is reserved for agents.")
+    @Operation(summary = "Create a new recharge transaction", description = "Creates a new transaction of type RECHARGE. Requires Idempotency-Key.")
     @ApiResponse(responseCode = "201", description = "Transaction created successfully", content = @Content(schema = @Schema(implementation = TransactionResponse.class)))
-    @ApiResponse(responseCode = "400", description = "Invalid request, only RECHARGE transactions are allowed")
+    @ApiResponse(responseCode = "400", description = "Invalid request, only RECHARGE transactions are allowed, or missing Idempotency-Key")
     @ApiResponse(responseCode = "401", description = "Unauthorized, invalid or expired token")
     @ApiResponse(responseCode = "403", description = "Forbidden, requires ROLE_AGENT")
-    public Mono<TransactionResponse> create(@RequestBody @Valid Mono<TransactionRequest> requestMono) {
-        return requestMono
-                .flatMap(request -> {
+    @ApiResponse(responseCode = "409", description = "Idempotency key reused with a different request body")
+    public Mono<ResponseEntity<TransactionResponse>> create(
+            @Parameter(description = "Client-provided idempotency token", required = true) @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @RequestBody @Valid Mono<TransactionRequest> requestMono) {
+        return requireIdempotencyKey(idempotencyKey)
+                .then(requestMono.flatMap(request -> {
                     if (request.type() != TransactionType.RECHARGE) {
                         return Mono.error(
                                 new IllegalArgumentException("Cet endpoint est réservé aux recharges via Agent"));
                     }
-                    return Mono.just(request);
-                })
-                .map(mapper::toDomain)
-                .flatMap(useCase::createTransaction)
-                .map(mapper::toResponse);
+                    try {
+                        String fp = idempotencyService.fingerprintForRequestBody(request);
+                        return useCase.createTransactionWithIdempotency(
+                                mapper.toDomain(request),
+                                Optional.of(new IdempotencyContext(idempotencyKey, fp)))
+                                .map(out -> ResponseEntity.status(out.httpStatus())
+                                        .body(mapper.toResponse(out.value())));
+                    } catch (JsonProcessingException e) {
+                        return Mono.error(new IllegalStateException(e));
+                    }
+                }));
     }
 
     /**
      * Crée une transaction de type {@link TransactionType#PAYMENT}.
      *
-     * @param requestMono corps validé
-     * @return transaction créée (201)
-     * @throws IllegalArgumentException réactive si le type n’est pas PAYMENT
+     * @param idempotencyKey en-tête obligatoire d’idempotence
+     * @param requestMono    corps validé
+     * @return transaction créée (201 ou rejouée 201)
      */
     @PostMapping("/payment")
-    @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Create a new payment transaction", description = "Creates a new transaction of type PAYMENT.")
+    @Operation(summary = "Create a new payment transaction", description = "Creates a new transaction of type PAYMENT. Requires Idempotency-Key.")
     @ApiResponse(responseCode = "201", description = "Transaction created successfully", content = @Content(schema = @Schema(implementation = TransactionResponse.class)))
-    @ApiResponse(responseCode = "400", description = "Invalid request")
+    @ApiResponse(responseCode = "400", description = "Invalid request or missing Idempotency-Key")
     @ApiResponse(responseCode = "401", description = "Unauthorized, invalid or expired token")
     @ApiResponse(responseCode = "403", description = "Forbidden")
-    public Mono<TransactionResponse> createPaymentTransaction(
+    @ApiResponse(responseCode = "409", description = "Idempotency key reused with a different request body")
+    public Mono<ResponseEntity<TransactionResponse>> createPaymentTransaction(
+            @Parameter(description = "Client-provided idempotency token", required = true) @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestBody @Valid Mono<TransactionRequest> requestMono) {
-        return requestMono
-                .flatMap(request -> {
+        return requireIdempotencyKey(idempotencyKey)
+                .then(requestMono.flatMap(request -> {
                     if (request.type() != TransactionType.PAYMENT) {
                         return Mono.error(
                                 new IllegalArgumentException("Cet endpoint est réservé aux recharges de type PAYMENT"));
                     }
-                    return Mono.just(request);
-                })
-                .map(mapper::toDomain)
-                .flatMap(useCase::createTransaction)
-                .map(mapper::toResponse);
+                    try {
+                        String fp = idempotencyService.fingerprintForRequestBody(request);
+                        return useCase.createTransactionWithIdempotency(
+                                mapper.toDomain(request),
+                                Optional.of(new IdempotencyContext(idempotencyKey, fp)))
+                                .map(out -> ResponseEntity.status(out.httpStatus())
+                                        .body(mapper.toResponse(out.value())));
+                    } catch (JsonProcessingException e) {
+                        return Mono.error(new IllegalStateException(e));
+                    }
+                }));
     }
 
     /**

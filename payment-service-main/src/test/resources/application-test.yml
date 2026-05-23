@@ -1,0 +1,43 @@
+# Profil « test » : pas de Redis, pas de compose, Kafka listeners arrêtés.
+# Les tests d’intégration (Testcontainers) surchargent JDBC/R2DBC/Liquibase via @DynamicPropertySource.
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+  docker:
+    compose:
+      enabled: false
+  liquibase:
+    enabled: false
+  kafka:
+    listener:
+      auto-startup: false
+    bootstrap-servers: 127.0.0.1:9092
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/placeholder
+    username: postgres
+    password: postgres
+
+application:
+  security:
+    # 32 octets en Base64 (exigence NimbusReactiveJwtDecoder)
+    jwt:
+      secret: MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=
+    internal-api-key: it-internal-api-key
+  cache:
+    redis:
+      enabled: false
+  idempotency:
+    retention: P7D
+  kafka:
+    topics:
+      wallet-create: wallet-create-topic
+      payment-commission: transaction-commission-topic
+    consumer:
+      retry:
+        initial-interval-ms: 500
+        multiplier: 2.0
+        max-interval-ms: 10000
+        max-elapsed-time-ms: 60000

@@ -1,4 +1,4 @@
-# Analyse — YowYob Pay (à jour)
+# Analyse - YowYob Pay (à jour)
 
 ## État actuel du dépôt
 
@@ -64,7 +64,7 @@ Gestion des **portefeuilles** et des **transactions** (paiement avec commission,
 - **PostgreSQL** (R2DBC + Liquibase)
 - **Kafka** (consommateurs + producteur réactif pour besoins internes)
 - **Resilience4J** (circuit breaker configuré, ex. `stock-service`)
-- **Spring Security** + OAuth2 Resource Server JWT (HMAC) — les routes API wallet/transaction sont en `permitAll` dans la config actuelle (à durcir en prod)
+- **Spring Security** + OAuth2 Resource Server JWT (HMAC) - les routes API wallet/transaction sont en `permitAll` dans la config actuelle (à durcir en prod)
 
 **Il n’y a plus** de couche Redis ni d’adaptateur de cache dans ce service.
 
@@ -120,7 +120,7 @@ cd payment-service-main   # ou user-payment-service-main
 docker compose up --build
 ```
 
-Les anciens chemins du type `user-payment-service-main/bin/compose.yaml` ou des `compose.yaml` vides dans un module **n’existent plus** — à ne pas utiliser.
+Les anciens chemins du type `user-payment-service-main/bin/compose.yaml` ou des `compose.yaml` vides dans un module **n’existent plus** - à ne pas utiliser.
 
 ---
 
@@ -155,11 +155,13 @@ Cette section regroupe des axes **réalistes** pour un rapport ou une soutenance
 
 ### Latence et rapidité des paiements (chemin critique)
 
+**État (implémentation)** : une grande partie des pistes ci-dessous est réalisée dans le code - détail opérationnel dans [changelogs.md](changelogs.md) (section « Latence et rapidité des paiements - phase performance »).
+
 | Thème | Idée | Détail |
 |--------|------|--------|
 | **Moins d’allers-retours DB** | Le flux paiement/recharge enchaîne lecture wallet → update → écriture transaction. | S’assurer d’index pertinents (`wallet_id`, `owner_id`) ; éviter `findAll` ou listes non paginées en charge. |
 | **Pool R2DBC** | `application.yml` fixe déjà un pool. | Ajuster `max-size` / `max-acquire-time` selon charge simulée (tests de charge pour le rapport). |
-| **Pas de cache** | Redis a été retiré faute d’usage. | **Option rapport** : réintroduire Redis **uniquement** pour lecture cache du solde ou métadonnées wallet en lecture seule, avec invalidation stricte après transaction — gain potentiel sur les lectures fréquentes ; le chemin d’écriture critique reste dominé par la DB. |
+| **Pas de cache** | Redis a été retiré faute d’usage. | **Option rapport** : réintroduire Redis **uniquement** pour lecture cache du solde ou métadonnées wallet en lecture seule, avec invalidation stricte après transaction - gain potentiel sur les lectures fréquentes ; le chemin d’écriture critique reste dominé par la DB. |
 | **Sérialisation** | JSON sur Kafka et REST. | Payloads légers ; éviter gros objets inutiles dans les événements. |
 | **Handler paiement** | `PaymentHandler` utilise un état mutable (`amountToRemove`) dans un singleton. | **Corriger** : calcul local dans `validate` / `applyBalance` sans champ d’instance → même ordre de latence mais **sûreté** et comportement prévisible sous concurrence. |
 

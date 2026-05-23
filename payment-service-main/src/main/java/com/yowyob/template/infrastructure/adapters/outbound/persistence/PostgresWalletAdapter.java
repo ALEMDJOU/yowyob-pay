@@ -1,6 +1,7 @@
 package com.yowyob.template.infrastructure.adapters.outbound.persistence;
 
 import com.yowyob.template.domain.model.Wallet;
+import com.yowyob.template.domain.model.WalletPage;
 import com.yowyob.template.domain.ports.out.WalletRepositoryPort;
 import com.yowyob.template.infrastructure.adapters.outbound.persistence.entity.WalletEntity;
 import com.yowyob.template.infrastructure.adapters.outbound.persistence.repository.WalletR2dbcRepository;
@@ -8,15 +9,15 @@ import com.yowyob.template.infrastructure.adapters.outbound.persistence.reposito
 import com.yowyob.template.infrastructure.mappers.WalletMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
 /**
+ * 
  * Adapter R2DBC PostgreSQL pour le port {@link com.yowyob.template.domain.ports.out.WalletRepositoryPort}.
  */
-@Component
+@Component("postgresWalletRepository")
 @RequiredArgsConstructor
 public class PostgresWalletAdapter implements WalletRepositoryPort {
 
@@ -34,6 +35,7 @@ public class PostgresWalletAdapter implements WalletRepositoryPort {
     }
 
     /**
+     * 
      * Insertion : marque l’entité comme nouvelle avant {@link WalletR2dbcRepository#save}.
      *
      * @param wallet données domaine
@@ -59,12 +61,23 @@ public class PostgresWalletAdapter implements WalletRepositoryPort {
     }
 
     /**
-     * @return flux complet des portefeuilles
+     * @param page index 0-based
+     * @param size taille de page
+     * @return page matérialisée avec totaux
      */
     @Override
-    public Flux<Wallet> findAllWallets() {
-        return repository.findAll()
-                .map(mapper::toDomain);
+    public Mono<WalletPage> findWalletsPage(int page, int size) {
+        long offset = (long) page * size;
+        return repository.count()
+                .flatMap(total -> repository.findAllWalletsPaged(size, offset)
+                        .map(mapper::toDomain)
+                        .collectList()
+                        .map(list -> new WalletPage(
+                                list,
+                                page,
+                                size,
+                                total,
+                                total == 0L ? 0 : (int) Math.ceil((double) total / (double) size))));
     }
 
     /**
@@ -81,6 +94,7 @@ public class PostgresWalletAdapter implements WalletRepositoryPort {
      *
      * @param wallet jeton domaine avec identifiant existant
      * @return portefeuille mis à jour
+     *                          
      * @throws RuntimeException propagée via {@link Mono#error(Throwable)} si aucune ligne pour mise à jour
      */
     @Override

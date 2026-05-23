@@ -1,0 +1,124 @@
+{
+  "nav": {
+    "home": "Home",
+    "login": "Sign in",
+    "register": "Sign up",
+    "dashboard": "Dashboard",
+    "wallets": "Wallets",
+    "logout": "Sign out",
+    "operations": "Operations"
+  },
+  "footer": {
+    "copyright": "© {year} Yowyob Pay. All rights reserved."
+  },
+  "landing": {
+    "title": "Yowyob Pay",
+    "subtitle": "Manage wallets and payment operations securely.",
+    "ctaLogin": "Sign in",
+    "ctaRegister": "Create account"
+  },
+  "auth": {
+    "loginTitle": "Agent sign in",
+    "registerTitle": "Agent registration",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "fieldEmail": "Email",
+    "fieldPassword": "Password",
+    "fieldName": "Name",
+    "submitLogin": "Sign in",
+    "submitRegister": "Register",
+    "noAccount": "No account ?",
+    "hasAccount": "Already registered ?",
+    "errorInvalidCredentials": "Incorrect email address or password.",
+    "errorEmailTaken": "This email is already registered. Sign in or use another address.",
+    "errorValidationSummary": "Some fields are invalid. Please fix them below.",
+    "errorGenericLogin": "Sign-in failed. Check your email and password.",
+    "errorGenericRegister": "Registration failed. Check the information you entered.",
+    "errorServer": "The service is temporarily unavailable. Please try again shortly.",
+    "errorNetwork": "Unable to reach the server. Check your connection.",
+    "validation": {
+      "emailRequired": "email is required",
+      "emailInvalid": "email is not valid",
+      "passwordRequired": "password is required",
+      "passwordLength": "password must be between 8 and 128 characters",
+      "nameRequired": "name is required",
+      "nameTooLong": "name is too long (120 characters max.)"
+    },
+    "codes": {
+      "INVALID_CREDENTIALS": "Incorrect email address or password.",
+      "EMAIL_ALREADY_USED": "This email is already registered."
+    }
+  },
+  "common": {
+    "back": "Back",
+    "loading": "Loading…"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome, {name}",
+    "walletsLink": "View wallets",
+    "rechargeKafka": "Recharge via Kafka (agent)",
+    "rechargeRest": "Direct REST recharge",
+    "payment": "REST payment"
+  },
+  "wallets": {
+    "title": "Wallets",
+    "new": "New wallet",
+    "ownerId": "Owner ID",
+    "ownerName": "Owner name",
+    "balance": "Balance",
+    "create": "Create",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "detail": "Details",
+    "transactions": "History",
+    "canOperate": "Can operate",
+    "canOperateYes": "Yes",
+    "canOperateNo": "No",
+    "empty": "No wallets",
+    "page": "Page {page} / {total}",
+    "prev": "Previous",
+    "next": "Next",
+    "confirmDelete": "Confirm deletion ?",
+    "idempotencyConflict": "This request was already sent with different content (409)."
+  },
+  "transactions": {
+    "title": "Transactions",
+    "detail": "View details",
+    "detailTitle": "Transaction",
+    "walletId": "Wallet",
+    "amount": "Amount",
+    "type": "Type",
+    "status": "Status",
+    "empty": "No transactions"
+  },
+  "operations": {
+    "rechargeKafkaTitle": "Agent recharge (Kafka)",
+    "rechargeKafkaHint": "Publishes an event via user-payment-service - primary agent flow.",
+    "rechargeRestTitle": "REST recharge (payment-service)",
+    "rechargeRestHint": "Synchronous credit on payment-service - separate from Kafka flow.",
+    "paymentTitle": "REST payment",
+    "paymentHint": "Synchronous debit on payment-service.",
+    "targetWalletId": "Target wallet",
+    "targetWallet": "Target wallet",
+    "submit": "Submit",
+    "accepted": "Operation accepted.",
+    "success": "Operation completed successfully."
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "genericWithStatus": "Something went wrong (code {status}).",
+    "unauthorized": "Session expired. Please sign in again.",
+    "forbidden": "You are not allowed to perform this action.",
+    "notFound": "Resource not found.",
+    "server": "The service is temporarily unavailable. Please try again later.",
+    "serverWithDetail": "Server error: {detail}",
+    "idempotencyConflict": "Idempotency key reused with a different body (409).",
+    "network": "Unable to reach the server. Check your connection."
+  },
+  "pagination": {
+    "size": "Page size"
+  }
+}

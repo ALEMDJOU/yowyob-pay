@@ -1,5 +1,8 @@
 package com.yowyob.template.infrastructure.adapters.inbound.rest.dto;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -9,4 +12,7 @@ import java.util.UUID;
  * @param targetWalletId identifiant du portefeuille à créditer
  * @param amount         montant positif attendu
  */
-public record RechargeRequest(UUID targetWalletId, BigDecimal amount) {}
+public record RechargeRequest(
+                @NotNull(message = "targetWalletId est obligatoire") UUID targetWalletId,
+                @NotNull(message = "amount est obligatoire") @Positive(message = "amount doit être strictement positif") BigDecimal amount) {
+}

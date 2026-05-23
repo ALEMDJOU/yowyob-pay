@@ -1,7 +1,7 @@
 package com.yowyob.template.domain.ports.out;
 
 import com.yowyob.template.domain.model.Wallet;
-import reactor.core.publisher.Flux;
+import com.yowyob.template.domain.model.WalletPage;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
@@ -30,9 +30,13 @@ public interface WalletRepositoryPort {
     Mono<Wallet> findByOwnerId(UUID ownerId);
 
     /**
-     * @return tous les portefeuilles
+     * Liste paginée des portefeuilles (tri stable par identifiant).
+     *
+     * @param page index 0-based
+     * @param size taille de page strictement positive (plafonnée côté API)
+     * @return page avec contenu et totaux
      */
-    Flux<Wallet> findAllWallets();
+    Mono<WalletPage> findWalletsPage(int page, int size);
 
     /**
      * @param id portefeuille à supprimer

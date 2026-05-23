@@ -9,12 +9,14 @@ app:
     server-url: ${PAYMENT_SERVER_URL:http://localhost:8090}
 
 springdoc:
+  api-docs:
+    enabled: ${EXPOSE_OPENAPI:true}
+    path: /v3/api-docs
   swagger-ui:
+    enabled: ${EXPOSE_OPENAPI:true}
     path: /swagger-ui.html
     config-url: /v3/api-docs/swagger-config
     url: /v3/api-docs
-  api-docs:
-    path: /v3/api-docs
 
 spring:
   liquibase:
@@ -32,16 +34,22 @@ spring:
     password: ${DB_PASSWORD}
     pool:
       enabled: true
-      initial-size: 1
-      max-size: 5
-      max-idle-time: 30m
-      max-life-time: 10m
-      acquire-retry: 3
-      max-acquire-time: 30s
-      validation-query: SELECT 1
+      initial-size: ${R2DBC_POOL_INITIAL_SIZE:1}
+      max-size: ${R2DBC_POOL_MAX_SIZE:5}
+      max-idle-time: ${R2DBC_POOL_MAX_IDLE_TIME:30m}
+      max-life-time: ${R2DBC_POOL_MAX_LIFE_TIME:10m}
+      acquire-retry: ${R2DBC_POOL_ACQUIRE_RETRY:3}
+      max-acquire-time: ${R2DBC_POOL_MAX_ACQUIRE_TIME:30s}
+      validation-query: ${R2DBC_POOL_VALIDATION_QUERY:SELECT 1}
   sql:
     init:
       mode: never
+
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
 
   kafka:
     bootstrap-servers: ${KAFKA_HOST}:${KAFKA_PORT:9092}
@@ -59,6 +67,9 @@ application:
   external:
     stock-service-url: http://${EXTERNAL_HOST:host.docker.internal}:8081
   security:
+    internal-api-key: ${PAYMENT_INTERNAL_API_KEY}
+    expose-openapi: ${EXPOSE_OPENAPI:true}
+    cors-allowed-origins-csv: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3999}
     jwt:
       secret: ${JWT_SECRET}
   kafka:
@@ -67,3 +78,9 @@ application:
       payment-commission: transaction-commission-topic
   payment:
     commission-rate: ${COMMISSION_RATE:0.1}
+  cache:
+    redis:
+      enabled: ${CACHE_REDIS_ENABLED:true}
+    wallet-balance-ttl: ${CACHE_WALLET_BALANCE_TTL:PT30S}
+  business:
+    max-transaction-amount: ${MAX_TRANSACTION_AMOUNT:1000000}

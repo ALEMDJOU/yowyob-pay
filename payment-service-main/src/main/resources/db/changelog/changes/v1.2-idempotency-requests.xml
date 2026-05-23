@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+
+    <changeSet id="v1.2-create-idempotency-requests" author="payment-service">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="idempotency_requests"/>
+            </not>
+        </preConditions>
+        <createTable tableName="idempotency_requests">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="scope" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="idempotency_key_hash" type="CHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="request_fingerprint" type="CHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="http_status" type="SMALLINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="response_body" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMPTZ" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="idempotency_requests" columnNames="scope, idempotency_key_hash" constraintName="uq_idempotency_scope_key_hash"/>
+        <createIndex tableName="idempotency_requests" indexName="idx_idempotency_scope_created_at">
+            <column name="scope"/>
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

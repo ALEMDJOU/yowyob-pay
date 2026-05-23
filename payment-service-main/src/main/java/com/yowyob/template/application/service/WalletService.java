@@ -1,17 +1,25 @@
 package com.yowyob.template.application.service;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yowyob.template.domain.exception.WalletNotFoundException;
 import com.yowyob.template.domain.model.Wallet;
+import com.yowyob.template.domain.model.WalletPage;
+import com.yowyob.template.domain.model.idempotency.IdempotencyContext;
+import com.yowyob.template.domain.model.idempotency.IdempotencyOutcome;
+import com.yowyob.template.domain.model.idempotency.IdempotencyScope;
 import com.yowyob.template.domain.ports.in.WalletUseCase;
 import com.yowyob.template.domain.ports.out.WalletRepositoryPort;
+import com.yowyob.template.infrastructure.adapters.inbound.rest.dto.WalletResponse;
+import com.yowyob.template.infrastructure.mappers.WalletMapper;
 
 import lombok.RequiredArgsConstructor;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -22,26 +30,31 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class WalletService implements WalletUseCase {
 
-    /** Accès persistant aux portefeuilles. */
-    public final WalletRepositoryPort walletRepositoryPort;
+    private final WalletRepositoryPort walletRepositoryPort;
+    private final IdempotencyService idempotencyService;
+    private final ObjectMapper objectMapper;
+    private final WalletMapper walletMapper;
 
     /**
-     * Crée un portefeuille avec identifiant généré si absent et solde initial par
-     * défaut 1000 si absent.
-     *
-     * @param wallet données saisies ; {@code id} et {@code balance} peuvent être
-     *               complétés automatiquement
-     * @return le portefeuille persisté
+     * {@inheritDoc}
      */
     @Override
-    public Mono<Wallet> createWallet(Wallet wallet) {
+    public Mono<IdempotencyOutcome<Wallet>> createWalletWithIdempotency(
+            Wallet wallet,
+            Optional<IdempotencyContext> idempotencyContext) {
         Wallet toSave = new Wallet(
                 wallet.id() != null ? wallet.id() : UUID.randomUUID(),
                 wallet.ownerId(),
                 wallet.ownerName(),
                 wallet.balance() != null ? wallet.balance() : BigDecimal.valueOf(1000));
 
-        return walletRepositoryPort.save(toSave);
+        return idempotencyService.execute(
+                IdempotencyScope.WALLET_CREATE,
+                idempotencyContext,
+                walletRepositoryPort.save(toSave),
+                this::serializeWallet,
+                this::deserializeWallet,
+                201);
     }
 
     /**
@@ -56,14 +69,30 @@ public class WalletService implements WalletUseCase {
     }
 
     /**
-     * Met à jour propriétaire et nom si fournis, conserve le solde existant.
-     *
-     * @param wallet doit contenir un {@code id} valide
-     * @return portefeuille après mise à jour
-     * @throws WalletNotFoundException si l’identifiant est inconnu
+     * {@inheritDoc}
      */
     @Override
-    public Mono<Wallet> updateWallet(Wallet wallet) {
+    public Mono<Optional<Wallet>> findWalletByOwnerIdOptional(UUID ownerId) {
+        return walletRepositoryPort.findByOwnerId(ownerId).map(Optional::of).defaultIfEmpty(Optional.empty());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Mono<IdempotencyOutcome<Wallet>> updateWalletWithIdempotency(
+            Wallet wallet,
+            Optional<IdempotencyContext> idempotencyContext) {
+        return idempotencyService.execute(
+                IdempotencyScope.WALLET_UPDATE,
+                idempotencyContext,
+                updateWalletCore(wallet),
+                this::serializeWallet,
+                this::deserializeWallet,
+                200);
+    }
+
+    private Mono<Wallet> updateWalletCore(Wallet wallet) {
         return walletRepositoryPort.findById(wallet.id())
                 .switchIfEmpty(Mono.error(new WalletNotFoundException("Wallet not found")))
                 .flatMap(existingWallet -> {
@@ -75,6 +104,23 @@ public class WalletService implements WalletUseCase {
 
                     return walletRepositoryPort.updateWallet(walletToUpdate);
                 });
+    }
+
+    private String serializeWallet(Wallet wallet) {
+        try {
+            return objectMapper.writeValueAsString(walletMapper.toResponse(wallet));
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Sérialisation portefeuille impossible", e);
+        }
+    }
+
+    private Wallet deserializeWallet(String json) {
+        try {
+            WalletResponse response = objectMapper.readValue(json, WalletResponse.class);
+            return walletMapper.toDomain(response);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Désérialisation portefeuille impossible", e);
+        }
     }
 
     /**
@@ -101,10 +147,12 @@ public class WalletService implements WalletUseCase {
     }
 
     /**
-     * @return flux de tous les portefeuilles en base
+     * @param page index 0-based
+     * @param size taille de page (validée côté contrôleur)
+     * @return page domaine
      */
     @Override
-    public Flux<Wallet> getAllWallets() {
-        return walletRepositoryPort.findAllWallets();
+    public Mono<WalletPage> getWalletsPage(int page, int size) {
+        return walletRepositoryPort.findWalletsPage(page, size);
     }
 }

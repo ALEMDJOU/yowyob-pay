@@ -13,7 +13,8 @@ public interface TransactionR2dbcRepository extends R2dbcRepository<TransactionE
 
     /**
      * @param walletId portefeuille cible
-     * @return flux ordonné ou vide selon les données
+     * @return flux du plus récent au plus ancien (index
+     *         {@code wallet_id, created_at DESC})
      */
-    Flux<TransactionEntity> findAllByWalletId(UUID walletId);
+    Flux<TransactionEntity> findAllByWalletIdOrderByCreatedAtDesc(UUID walletId);
 }

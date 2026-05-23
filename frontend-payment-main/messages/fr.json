@@ -1,0 +1,124 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "login": "Connexion",
+    "register": "Inscription",
+    "dashboard": "Tableau de bord",
+    "wallets": "Portefeuilles",
+    "logout": "Déconnexion",
+    "operations": "Opérations"
+  },
+  "footer": {
+    "copyright": "© {year} Yowyob Pay. Tous droits réservés."
+  },
+  "landing": {
+    "title": "Yowyob Pay",
+    "subtitle": "Gérez portefeuilles et opérations de paiement en toute sécurité.",
+    "ctaLogin": "Se connecter",
+    "ctaRegister": "Créer un compte"
+  },
+  "auth": {
+    "loginTitle": "Connexion agent",
+    "registerTitle": "Inscription agent",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "name": "Nom",
+    "fieldEmail": "E-mail",
+    "fieldPassword": "Mot de passe",
+    "fieldName": "Nom",
+    "submitLogin": "Connexion",
+    "submitRegister": "S'inscrire",
+    "noAccount": "Pas de compte ?",
+    "hasAccount": "Déjà inscrit ?",
+    "errorInvalidCredentials": "Adresse e-mail ou mot de passe incorrect.",
+    "errorEmailTaken": "Cette adresse e-mail est déjà utilisée. Connectez-vous ou utilisez une autre adresse.",
+    "errorValidationSummary": "Certains champs sont invalides. Corrigez-les ci-dessous.",
+    "errorGenericLogin": "Connexion impossible. Vérifiez votre e-mail et votre mot de passe.",
+    "errorGenericRegister": "Inscription impossible. Vérifiez les informations saisies.",
+    "errorServer": "Le service est temporairement indisponible. Réessayez dans un instant.",
+    "errorNetwork": "Impossible de contacter le serveur. Vérifiez votre connexion.",
+    "validation": {
+      "emailRequired": "l’adresse e-mail est obligatoire",
+      "emailInvalid": "l’adresse e-mail n’est pas valide",
+      "passwordRequired": "le mot de passe est obligatoire",
+      "passwordLength": "le mot de passe doit contenir entre 8 et 128 caractères",
+      "nameRequired": "le nom est obligatoire",
+      "nameTooLong": "le nom est trop long (120 caractères max.)"
+    },
+    "codes": {
+      "INVALID_CREDENTIALS": "Adresse e-mail ou mot de passe incorrect.",
+      "EMAIL_ALREADY_USED": "Cette adresse e-mail est déjà utilisée."
+    }
+  },
+  "common": {
+    "back": "Retour",
+    "loading": "Chargement…"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "welcome": "Bienvenue, {name}",
+    "walletsLink": "Voir les portefeuilles",
+    "rechargeKafka": "Recharge via Kafka (agent)",
+    "rechargeRest": "Recharge REST directe",
+    "payment": "Paiement REST"
+  },
+  "wallets": {
+    "title": "Portefeuilles",
+    "new": "Nouveau portefeuille",
+    "ownerId": "ID propriétaire",
+    "ownerName": "Nom propriétaire",
+    "balance": "Solde",
+    "create": "Créer",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "detail": "Détail",
+    "transactions": "Historique",
+    "canOperate": "Opération possible",
+    "canOperateYes": "Oui",
+    "canOperateNo": "Non",
+    "empty": "Aucun portefeuille",
+    "page": "Page {page} / {total}",
+    "prev": "Précédent",
+    "next": "Suivant",
+    "confirmDelete": "Confirmer la suppression ?",
+    "idempotencyConflict": "Cette requête a déjà été envoyée avec un contenu différent (409)."
+  },
+  "transactions": {
+    "title": "Transactions",
+    "detail": "Voir le détail",
+    "detailTitle": "Transaction",
+    "walletId": "Portefeuille",
+    "amount": "Montant",
+    "type": "Type",
+    "status": "Statut",
+    "empty": "Aucune transaction"
+  },
+  "operations": {
+    "rechargeKafkaTitle": "Recharge agent (Kafka)",
+    "rechargeKafkaHint": "Publie un événement via user-payment-service - flux métier principal des agents.",
+    "rechargeRestTitle": "Recharge REST (payment-service)",
+    "rechargeRestHint": "Crédit synchrone direct sur payment-service - distinct du flux Kafka.",
+    "paymentTitle": "Paiement REST",
+    "paymentHint": "Débit synchrone sur payment-service.",
+    "targetWalletId": "Portefeuille cible",
+    "targetWallet": "Portefeuille cible",
+    "submit": "Exécuter",
+    "accepted": "Opération acceptée.",
+    "success": "Opération enregistrée avec succès."
+  },
+  "errors": {
+    "generic": "Une erreur est survenue. Réessayez.",
+    "genericWithStatus": "Une erreur est survenue (code {status}).",
+    "unauthorized": "Session expirée. Reconnectez-vous.",
+    "forbidden": "Vous n’avez pas l’autorisation pour cette action.",
+    "notFound": "Ressource introuvable.",
+    "server": "Le service est temporairement indisponible. Réessayez plus tard.",
+    "serverWithDetail": "Erreur serveur : {detail}",
+    "idempotencyConflict": "Clé d’idempotence déjà utilisée avec un corps différent (409).",
+    "network": "Impossible de contacter le serveur. Vérifiez votre connexion."
+  },
+  "pagination": {
+    "size": "Taille de page"
+  }
+}

@@ -1,11 +1,17 @@
 package com.yowyob.template.infrastructure.adapters.outbound.persistence.entity;
 
-import lombok.*;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
-import java.math.BigDecimal;
-import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Ligne {@code transactions} : types et statuts stockés en texte (noms d’énum).
@@ -23,4 +29,6 @@ public class TransactionEntity {
     private BigDecimal amount;
     private String type;
     private String status;
+    /** Horodatage de création (colonne {@code created_at}, défaut côté base). */
+    private Instant createdAt;
 }

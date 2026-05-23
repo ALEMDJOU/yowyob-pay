@@ -5,6 +5,7 @@ import com.yowyob.template.infrastructure.adapters.inbound.rest.dto.TransactionR
 import com.yowyob.template.infrastructure.adapters.inbound.rest.dto.TransactionResponse;
 import com.yowyob.template.infrastructure.adapters.outbound.persistence.entity.TransactionEntity;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 /**
  * Conversions MapStruct pour les transactions (REST ↔ domaine ↔ persistance).
@@ -25,9 +26,16 @@ public interface TransactionMapper {
     TransactionResponse toResponse(Transaction domain);
 
     /**
+     * @param response corps issu du stockage idempotence
+     * @return modèle domaine
+     */
+    Transaction toDomain(TransactionResponse response);
+
+    /**
      * @param domain transaction métier
      * @return entité relationnelle
      */
+    @Mapping(target = "createdAt", ignore = true)
     TransactionEntity toEntity(Transaction domain);
 
     /**

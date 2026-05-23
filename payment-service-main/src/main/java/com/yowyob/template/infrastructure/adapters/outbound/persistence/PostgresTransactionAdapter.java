@@ -35,7 +35,8 @@ public class PostgresTransactionAdapter implements TransactionRepositoryPort {
                 transaction.walletId(),
                 transaction.amount(),
                 transaction.type().name(),
-                transaction.status().name()
+                transaction.status().name(),
+                null
         );
 
         return repository.save(entity)
@@ -58,7 +59,7 @@ public class PostgresTransactionAdapter implements TransactionRepositoryPort {
      */
     @Override
     public Flux<Transaction> getTransactionsByWalletId(UUID walletId) {
-        return repository.findAllByWalletId(walletId)
+        return repository.findAllByWalletIdOrderByCreatedAtDesc(walletId)
                 .map(this::mapToDomain);
     }
 

@@ -1,23 +1,30 @@
 package com.yowyob.template.infrastructure.security;
 
+import java.security.Key;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
-import java.security.Key;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
- * Génération et validation de jetons JWT (HS256) pour l’authentification des agents.
+ * Génération et validation de jetons JWT (HS256) pour l’authentification des
+ * agents.
  */
 @Service
 public class JwtService {
+
+    public static final String CLAIM_AGENT_ID = "agentId";
+    public static final String CLAIM_EMAIL = "email";
+    public static final String CLAIM_NAME = "name";
 
     @Value("${application.security.jwt.secret}")
     private String secretKey;
@@ -28,7 +35,8 @@ public class JwtService {
     /**
      * @param token jeton Bearer sans préfixe
      * @return sujet (ici l’email) extrait des claims
-     * @throws io.jsonwebtoken.JwtException en cas de signature ou format invalide (non documentée ici, propagée)
+     * @throws io.jsonwebtoken.JwtException en cas de signature ou format invalide
+     *                                      (non documentée ici, propagée)
      */
     public String extractUsername(String token) {
         return extractAllClaims(token).getSubject();
@@ -43,7 +51,38 @@ public class JwtService {
     }
 
     /**
-     * @param extraClaims claims additionnels (vide pour l’instant)
+     * @param email   sujet du jeton (identifiant de connexion)
+     * @param agentId identifiant métier de l’agent
+     * @param name    nom affiché
+     * @return JWT avec claims {@code agentId}, {@code email} et {@code name}
+     */
+    public String generateToken(String email, UUID agentId, String name) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(CLAIM_AGENT_ID, agentId.toString());
+        claims.put(CLAIM_EMAIL, email);
+        claims.put(CLAIM_NAME, name);
+        return buildToken(claims, email);
+    }
+
+    /**
+     * @param token jeton Bearer
+     * @return claim {@code agentId} ou {@code null} si absent
+     */
+    public UUID extractAgentId(String token) {
+        String raw = extractAllClaims(token).get(CLAIM_AGENT_ID, String.class);
+        return raw != null ? UUID.fromString(raw) : null;
+    }
+
+    /**
+     * @param token jeton Bearer
+     * @return claim {@code name} ou {@code null}
+     */
+    public String extractName(String token) {
+        return extractAllClaims(token).get(CLAIM_NAME, String.class);
+    }
+
+    /**
+     * @param extraClaims claims additionnels
      * @param username    sujet du jeton
      * @return JWT signé avec expiration configurée
      */
